@@ -3,6 +3,7 @@ const morgan = require('morgan');
 const path = require('path');
 const nunjucks = require('nunjucks');
 const multer = require('multer');
+const profileController = require('./controllers/profileController');
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -21,18 +22,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.post('/upload', upload.array('input_profile'), (req, res) => {
-  const files = req.files;
-  let allData = [];
-  let fileNames = [];
-  for (const file of files) {
-    const rows = file.buffer.toString('utf-8').split('\n').map(row => row.trim().split(/\t|,|\s+/));
-    const filteredRows = rows.filter(row => row.length > 1 && row.some(cell => cell.trim() !== '') && !row[0].toLowerCase().startsWith('task'));
-    allData = allData.concat(filteredRows);
-    fileNames.push(file.originalname);
-  }
-  res.status(200).json({ data: allData, files: fileNames });
-});
+app.post('/upload', upload.array('input_profile'), profileController.uploadFiles);
+app.get('/profiles', profileController.getProfiles);
+app.get('/profiles/:name', profileController.getProfileData);
+app.delete('/profiles/:name', profileController.deleteProfile);
 
 app.get('/', (req, res) => {
   res.render('index');

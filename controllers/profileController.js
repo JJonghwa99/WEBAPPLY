@@ -1,6 +1,6 @@
-const Profile = require('../models/profile');
+const profiles = {};
 
-exports.uploadFiles = async (req, res) => {
+exports.uploadFiles = (req, res) => {
   try {
     const files = req.files;
     for (const file of files) {
@@ -11,7 +11,10 @@ exports.uploadFiles = async (req, res) => {
 
       const name = file.originalname.split('.')[0];
 
-      await Profile.create({ name, data: filteredRows });
+      if (!profiles[name]) {
+        profiles[name] = [];
+      }
+      profiles[name].push(filteredRows);
     }
     res.status(200).send('Files uploaded and processed successfully');
   } catch (err) {
@@ -19,34 +22,34 @@ exports.uploadFiles = async (req, res) => {
   }
 };
 
-exports.getProfiles = async (req, res) => {
+exports.getProfiles = (req, res) => {
   try {
-    const profiles = await Profile.find().distinct('name');
-    res.json(profiles);
+    const profileNames = Object.keys(profiles);
+    res.json(profileNames);
   } catch (err) {
     res.status(500).send(err.message);
   }
 };
 
-exports.getProfileData = async (req, res) => {
+exports.getProfileData = (req, res) => {
   try {
     const { name } = req.params;
-    const profile = await Profile.findOne({ name });
+    const profileData = profiles[name];
 
-    if (!profile) {
+    if (!profileData) {
       return res.status(404).send('Profile not found');
     }
 
-    res.json(profile.data);
+    res.json(profileData);
   } catch (err) {
     res.status(500).send(err.message);
   }
 };
 
-exports.deleteProfile = async (req, res) => {
+exports.deleteProfile = (req, res) => {
   try {
     const { name } = req.params;
-    await Profile.deleteMany({ name });
+    delete profiles[name];
     res.send('Profile deleted');
   } catch (err) {
     res.status(500).send(err.message);
